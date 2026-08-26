@@ -22,7 +22,7 @@ $('login').onclick=async()=>{
  $('logout').onclick=async()=>{await supabaseClient.auth.signOut();check()}
 function n(v){const x=Number(v);return Number.isFinite(x)?Math.max(0,Math.round(x)):0}
 function excelDate(v){if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);return d?`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`:null} if(!v)return null; const d=new Date(v);return isNaN(d)?null:d.toISOString().slice(0,10)}
-function ship(no,year,style,series){const m=String(no||'').match(/(\d{1,2})-(\d{1,2})/);if(!m)return null; const doorType=`${style||''}${series||''}`;const days=doorType.includes('子母')?10:7; const d=new Date(year,Number(m[1])-1,Number(m[2])+days);return d.toISOString().slice(0,10)}
+function ship(no,year,style,series){const m=String(no||'').match(/(\d{1,2})-(\d{1,2})/);if(!m)return null; const doorType=`${style||''}${series||''}`;const days=doorType.includes('子母')?10:8; const d=new Date(year,Number(m[1])-1,Number(m[2])+days);return d.toISOString().slice(0,10)}
 $('upload').onclick=async()=>{
  const f=$('file').files[0];if(!f){alert('请选择 Excel 文件');return}
  try{
