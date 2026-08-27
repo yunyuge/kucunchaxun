@@ -1,4 +1,6 @@
 const $=id=>document.getElementById(id);
+let warehouse=localStorage.getItem('selectedWarehouse')||WAREHOUSES[0].id;
+function initWarehouses(){const el=$('warehouse');el.innerHTML=WAREHOUSES.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');el.value=warehouse;el.onchange=()=>{warehouse=el.value;localStorage.setItem('selectedWarehouse',warehouse)}}
 function status(s){$('progress').textContent=s}
 async function check(){const {data:{session}}=await supabaseClient.auth.getSession();$('loginCard').classList.toggle('hidden',!!session);$('panel').classList.toggle('hidden',!session)}
 $('login').onclick=async()=>{
@@ -34,16 +36,16 @@ $('upload').onclick=async()=>{
    if(!style||!size||!opening)return;
    const date=excelDate(r['日期']); const year=date?new Date(date+'T00:00:00').getFullYear():new Date().getFullYear();
   const series=String(r['系列']??'').trim()||null; const productionNo=String(r['生产编号']??'').trim()||null;
-  const common={record_date:date,style,series,size,opening,production_no:productionNo,estimated_shipping_date:ship(productionNo,year,style,series)};
+  const common={warehouse,record_date:date,style,series,size,opening,production_no:productionNo,estimated_shipping_date:ship(productionNo,year,style,series)};
    [['左','已入库\n左'],['右','已入库\n右']].forEach(([side,stockCol])=>{
     const original=n(r[side]), stocked=n(r[stockCol]), pending=Math.max(0,original-stocked);
-    out.push({...common,source_key:`${date||'nodate'}|${style}|${size}|${opening}|${side}|${common.production_no||''}|${i}`,side,original_quantity:original,stocked_quantity:stocked,pending_quantity:pending,updated_at:new Date().toISOString()})
+    out.push({...common,source_key:`${warehouse}|${date||'nodate'}|${style}|${size}|${opening}|${side}|${common.production_no||''}|${i}`,side,original_quantity:original,stocked_quantity:stocked,pending_quantity:pending,updated_at:new Date().toISOString()})
    })
   });
   status(`已解析 ${rows.length} 行，准备上传 ${out.length} 条左右明细...`);
-    const {error:del}=await supabaseClient.from('door_batches').delete().not('id','is',null);if(del)throw del;
+    const {error:del}=await supabaseClient.from('door_batches').delete().eq('warehouse',warehouse);if(del)throw del;
     const chunk=200; for(let i=0;i<out.length;i+=chunk){status(`正在上传 ${Math.min(i+chunk,out.length)}/${out.length}...`);const {error}=await supabaseClient.from('door_batches').insert(out.slice(i,i+chunk));if(error)throw error}
   status(`上传完成！云端已更新 ${out.length} 条数据。查询网站现在即可读取最新数据。`);
  }catch(e){console.error(e);status('上传失败：'+e.message)}
 }
-check();
+initWarehouses();check();

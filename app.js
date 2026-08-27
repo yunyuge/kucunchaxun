@@ -1,11 +1,13 @@
 const $=id=>document.getElementById(id);
 const selects=['style','size','opening'];
 let all=[];
+let warehouse=localStorage.getItem('selectedWarehouse')||WAREHOUSES[0].id;
+function initWarehouses(){const el=$('warehouse');el.innerHTML=WAREHOUSES.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');el.value=warehouse}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fill(id,vals){const el=$(id), cur=el.value; el.innerHTML='<option value="">请选择</option>'+[...new Set(vals.filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join(''); if([...el.options].some(o=>o.value===cur))el.value=cur}
 async function load(){
  $('loading').classList.remove('hidden');
- const {data,error}=await supabaseClient.from('door_batches').select('*').gt('pending_quantity',0).order('estimated_shipping_date',{ascending:true});
+ const {data,error}=await supabaseClient.from('door_batches').select('*').eq('warehouse',warehouse).gt('pending_quantity',0).order('estimated_shipping_date',{ascending:true});
  $('loading').classList.add('hidden');
  if(error){alert('读取云端数据失败：'+error.message);return}
  all=data||[]; updateFilters();
@@ -19,11 +21,12 @@ function updateFilters(){
 }
 $('style').addEventListener('change',()=>{ $('size').value='';$('opening').value='';updateFilters()});
 $('size').addEventListener('change',()=>{ const a=all.filter(x=>(!$('style').value||x.style===$('style').value)&&(!$('size').value||x.size===$('size').value));fill('opening',a.map(x=>x.opening))});
+$('warehouse').addEventListener('change',()=>{warehouse=$('warehouse').value;localStorage.setItem('selectedWarehouse',warehouse);$('style').value='';$('size').value='';$('opening').value='';$('result').classList.add('hidden');$('empty').classList.add('hidden');load()});
 $('query').onclick=async()=>{
  const style=$('style').value,size=$('size').value,opening=$('opening').value,side=$('side').value;
  if(!style||!size||!opening||!side){alert('请完整选择查询条件');return}
  $('result').classList.add('hidden');$('empty').classList.add('hidden');$('loading').classList.remove('hidden');
- const {data,error}=await supabaseClient.from('door_batches').select('*').eq('style',style).eq('size',size).eq('opening',opening).eq('side',side).gt('pending_quantity',0).order('estimated_shipping_date',{ascending:true});
+ const {data,error}=await supabaseClient.from('door_batches').select('*').eq('warehouse',warehouse).eq('style',style).eq('size',size).eq('opening',opening).eq('side',side).gt('pending_quantity',0).order('estimated_shipping_date',{ascending:true});
  $('loading').classList.add('hidden');
  if(error){alert(error.message);return}
  if(!data?.length){$('empty').classList.remove('hidden');return}
@@ -32,4 +35,4 @@ $('query').onclick=async()=>{
  $('result').innerHTML=`<h2>查询结果</h2><div class="info"><span>款式<b>${esc(x.style)}</b></span><span>尺寸<b>${esc(x.size)}</b></span><span>开向<b>${esc(x.opening)}</b></span><span>左右<b>${esc(x.side)}</b></span></div><div class="date"><small>最快预计出货时间</small><strong>${d}</strong><em>生产编号：${esc(x.production_no||'—')} · 当前未入库：${x.pending_quantity}</em></div><h3 class="batch-title">全部批次（${data.length} 批）</h3><div class="batch-table-wrap" style="overflow-x:auto"><table class="batch-table" style="width:100%;min-width:520px;border-collapse:collapse"><thead><tr><th style="padding:12px;border-bottom:1px solid #e5e7eb;text-align:left">序号</th><th style="padding:12px;border-bottom:1px solid #e5e7eb;text-align:left">生产编号</th><th style="padding:12px;border-bottom:1px solid #e5e7eb;text-align:left">预计出货时间</th><th style="padding:12px;border-bottom:1px solid #e5e7eb;text-align:left">未入库数量</th></tr></thead><tbody>${batches}</tbody></table></div>`;
  $('result').classList.remove('hidden');
 };
-load();
+initWarehouses();load();

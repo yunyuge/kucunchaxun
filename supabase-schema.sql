@@ -1,6 +1,7 @@
 create table if not exists public.door_batches (
   id bigint generated always as identity primary key,
   source_key text not null unique,
+  warehouse text not null default 'warehouse-1',
   record_date date,
   style text not null,
   series text,
@@ -15,8 +16,10 @@ create table if not exists public.door_batches (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists door_batches_lookup_idx
-on public.door_batches (style, size, opening, side, estimated_shipping_date);
+alter table public.door_batches add column if not exists warehouse text not null default 'warehouse-1';
+
+create index if not exists door_batches_warehouse_lookup_idx
+on public.door_batches (warehouse, style, size, opening, side, estimated_shipping_date);
 
 alter table public.door_batches enable row level security;
 
