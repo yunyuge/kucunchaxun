@@ -23,7 +23,7 @@ $('login').onclick=async()=>{
 }
  $('logout').onclick=async()=>{await supabaseClient.auth.signOut();check()}
 function n(v){const x=Number(v);return Number.isFinite(x)?Math.max(0,Math.round(x)):0}
-function excelDate(v){if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);return d?`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`:null} if(!v)return null; const d=new Date(v);return isNaN(d)?null:d.toISOString().slice(0,10)}
+function excelDate(v,warehouseId){if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);return d?`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`:null} if(!v)return null; const text=String(v).trim(); if(warehouseId==='warehouse-2'){const m=text.match(/^(\d{1,2})-(\d{1,2})$/);if(m){const year=new Date().getFullYear();return `${year}-${String(Number(m[1])).padStart(2,'0')}-${String(Number(m[2])).padStart(2,'0')}`}} const d=new Date(text);return isNaN(d)?null:d.toISOString().slice(0,10)}
 function ship(no,year,style,series){const m=String(no||'').match(/(\d{1,2})-(\d{1,2})/);if(!m)return null; const doorType=`${style||''}${series||''}`;const days=doorType.includes('子母')?10:8; const d=new Date(year,Number(m[1])-1,Number(m[2])+days);return d.toISOString().slice(0,10)}
 $('upload').onclick=async()=>{
  const f=$('file').files[0];if(!f){alert('请选择 Excel 文件');return}
@@ -34,7 +34,7 @@ $('upload').onclick=async()=>{
   const out=[]; rows.forEach((r,i)=>{
    const style=String(r['款式']??'').trim(), size=String(r['尺寸']??'').trim(), opening=String(r['开向']??'').trim();
    if(!style||!size||!opening)return;
-   const date=excelDate(r['日期']); const year=date?new Date(date+'T00:00:00').getFullYear():new Date().getFullYear();
+  const date=excelDate(r['日期'],warehouse); const year=date?new Date(date+'T00:00:00').getFullYear():new Date().getFullYear();
   const series=String(r['系列']??'').trim()||null; const productionNo=String(r['生产编号']??'').trim()||null;
   const common={warehouse,record_date:date,style,series,size,opening,production_no:productionNo,estimated_shipping_date:ship(productionNo,year,style,series)};
    [['左','已入库\n左'],['右','已入库\n右']].forEach(([side,stockCol])=>{
