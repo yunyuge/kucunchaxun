@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>定制门价格计算器</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#17212b;font-family:"Microsoft YaHei",Arial,sans-serif}
+.wrap{max-width:1250px;margin:0 auto;padding:24px}
+header{background:linear-gradient(135deg,#17324d,#315c7d);color:#fff;border-radius:18px;padding:26px 30px;margin-bottom:18px;box-shadow:0 10px 30px #17324d22}
+header h1{margin:0 0 7px;font-size:30px}header p{margin:0;opacity:.82}
+.topbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+.topbar a{display:inline-block;padding:10px 18px;border-radius:10px;background:#6b7280;color:#fff;text-decoration:none;font-size:14px}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
+.card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 5px 20px #17212b12;margin-bottom:18px}
+.card h2{font-size:18px;margin:0 0 17px;border-left:4px solid #315c7d;padding-left:10px}
+.formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+label{font-size:13px;color:#596774;display:block;margin-bottom:6px}
+input,select{width:100%;height:42px;border:1px solid #d7dee5;border-radius:9px;padding:0 11px;font-size:15px;background:#fff}
+input:focus,select:focus{outline:2px solid #315c7d33;border-color:#315c7d}
+.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.check{display:flex;align-items:center;gap:8px;padding:10px 11px;border:1px solid #e1e6eb;border-radius:9px;font-size:14px}
+.check input{width:auto;height:auto}
+.help{font-size:12px;color:#7b8792;margin-top:5px;line-height:1.5}
+.total{position:sticky;top:15px;background:#fff;border-radius:16px;box-shadow:0 5px 20px #17212b12;padding:24px}
+.total .label{font-size:13px;color:#71808d}.amount{font-size:46px;font-weight:800;margin:4px 0 18px;color:#17324d}.amount small{font-size:18px;font-weight:500}
+.breakdown{border-top:1px solid #e8edf1}.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed #e2e7eb;font-size:14px}.row span:last-child{font-weight:600;white-space:nowrap}
+.warn{background:#fff7e6;border:1px solid #ffe1a3;color:#805b14;border-radius:9px;padding:10px;font-size:13px;margin-top:15px;line-height:1.55}
+.ok{background:#edf8f1;border:1px solid #bfe6cb;color:#27633a;border-radius:9px;padding:10px;font-size:13px;margin-top:15px}
+button{width:100%;border:0;border-radius:10px;height:44px;background:#17324d;color:#fff;font-size:15px;cursor:pointer;margin-top:15px}
+button:hover{opacity:.9}
+.secondary-btn{background:#6b7280}
+.note{font-size:12px;color:#687581;line-height:1.6;margin-top:14px}
+@media print{
+  body { background: #fff; }
+  .wrap { max-width: none; margin: 0; padding: 0; }
+  header, main, .card, .note, .secondary-btn { display: none !important; }
+  .grid { display: block !important; }
+  aside { display: block !important; width: 100% !important; }
+  .total { position: static; box-shadow: none; border: 1px solid #e5e7eb; background: #fff; padding: 18px 20px; }
+  .breakdown { display: block; }
+  #status { display: block; }
+}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.total{position:static}.formgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topbar"><a href="index.html">返回主页</a></div>
+<header>
+  <h1>定制门价格计算器</h1>
+  <p>按您提供的《定制价格表》规则自动计算，金额单位：元 / 樘</p>
+</header>
+
+<div class="grid">
+<main>
+<div class="card">
+<h2>① 基础款式</h2>
+<div class="formgrid">
+  <div><label>款式</label><select id="style"></select></div>
+  <div><label>门型</label><select id="type">
+    <option value="single">单门</option><option value="double">子母</option><option value="pair">对开</option>
+  </select></div>
+  <div><label>数量（樘）</label><input id="qty" type="number" min="1" value="1"></div>
+  <div><label>同方向同尺寸是否 ≥5樘</label><select id="batch"><option value="no">否</option><option value="yes">是（免定制费）</option></select></div>
+</div>
+</div>
+
+<div class="card">
+<h2>② 尺寸与墙体</h2>
+<div class="formgrid">
+  <div><label>门洞高度（mm）</label><input id="h" type="number" min="0" value="2100"></div>
+  <div><label>门洞宽度（mm）</label><input id="w" type="number" min="0" value="1000"></div>
+  <div><label>墙体厚度</label><select id="wall">
+    <option value="none">不加墙体价</option><option value="lt26">小于26cm</option><option value="gt26">大于26cm</option>
+  </select></div>
+  <div><label>超高/超宽加价档数</label><input id="oversize" type="number" min="0" value="0"></div>
+  <div><label>门楣加高（超出标准的10cm档数）</label><input id="lintel" type="number" min="0" value="0"></div>
+  <div><label>下档加高（10cm以内）</label><select id="bottom"><option value="0">不加</option><option value="50">+50</option></select></div>
+</div>
+<div class="help">价格表写明：超高超宽每10cm +100；门洞最大2500×1800，外框最大2700×1900。计算器保留“加价档数”供现场按实际尺寸确认。</div>
+</div>
+
+<div class="card">
+<h2>③ 定制项目</h2>
+<div class="checks">
+<label class="check"><input type="checkbox" id="doubleWrap"> 双包套</label>
+<label class="check"><input type="checkbox" id="opei"> 欧派授权费</label>
+<label class="check"><input type="checkbox" id="seal"> 封板高度20cm以内</label>
+<label class="check"><input type="checkbox" id="sealExtra"> 封板每超10cm</label>
+<label class="check"><input type="checkbox" id="foot"> 足甲1.0 / 2.0</label>
+<label class="check"><input type="checkbox" id="footWide"> 足甲加高加宽一档 +120</label>
+<label class="check"><input type="checkbox" id="hidden"> 隐形门楣</label>
+<label class="check"><input type="checkbox" id="join"> 拼接边框</label>
+<label class="check"><input type="checkbox" id="inside"> 外平内开 +50</label>
+<label class="check"><input type="checkbox" id="anti"> 防撬钢 +150</label>
+<label class="check"><input type="checkbox" id="customerLock"> 锁体客户自供 +50人工</label>
+<label class="check"><input type="checkbox" id="finger"> 指纹锁自供 +开孔120</label>
+</div>
+<div class="formgrid" style="margin-top:14px">
+  <div><label>封板超出10cm的档数</label><input id="sealExtraN" type="number" min="0" value="0"></div>
+  <div><label>拼接边框档数</label><input id="joinN" type="number" min="0" value="1"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>④ 门框 / 包边</h2>
+<div class="formgrid">
+  <div><label>包边扩大</label><select id="edge">
+    <option value="0">不加</option><option value="small">3cm内</option><option value="big">3–8cm</option>
+  </select></div>
+  <div><label>改颜色</label><select id="color">
+    <option value="0">不改色</option><option value="normal">普通改色</option><option value="transfer">改转印</option><option value="indoor">室内改花型</option><option value="doublecolor">双色门</option>
+  </select></div>
+  <div><label>填充物</label><select id="fill">
+    <option value="0">默认</option><option value="alu">全铝箔</option><option value="foam">全发泡</option>
+  </select></div>
+</div>
+</div>
+
+<div class="card">
+<h2>⑤ 其他规则</h2>
+<div class="checks">
+<label class="check"><input type="checkbox" id="custom"> 需要另计150元定制费</label>
+<label class="check"><input type="checkbox" id="manual"> 其他人工 / 特殊要求</label>
+</div>
+<div style="margin-top:14px"><label>其他人工或特殊费用</label><input id="manualFee" type="number" min="0" value="0"></div>
+</div>
+</main>
+
+<aside>
+<div class="total">
+  <div class="label">预估总价</div>
+  <div class="amount"><span id="total">0</span><small> 元</small></div>
+  <div id="status"></div>
+  <div class="breakdown" id="breakdown"></div>
+  <div class="note">
+    <b>尺寸限制提醒</b><br>
+    门洞最大：2500×1800mm；外框最大：2700×1900mm（1号边）。<br>
+    单门最宽1180mm，见光最大1020mm。锁体小于40×388无侧锁，高度低于1900mm无侧锁。
+  </div>
+</div>
+</aside>
+</div>
+</div>
+
+<script>
+const styles={
+ "长城/北朗/东风/归来/浪琴/艾菲尔/成功/欧梦/欧平/欧豪/欧川/欧阳/欧马":[799,1198,1598],
+ "未来/欧米茄":[899,1348,1798],
+ "阳光/欧园/致富":[980,1421,1862],
+ "牛牛（按长虹价格+150定制费）":[849,1249,null],
+ "福来/运来（不含防撬钢）":[1020,1479,1938]
+};
+const sel=document.getElementById('style');
+Object.keys(styles).forEach((s,i)=>{let o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o)});
+
+const $=id=>document.getElementById(id);
+function typeIndex(){return {single:0,double:1,pair:2}[$('type').value]}
+function v(id){return parseFloat($(id).value)||0}
+function calc(){
+ const idx=typeIndex(), qty=Math.max(1,v('qty')), base=styles[$('style').value][idx]||0;
+ let items=[];
+ const add=(name,fee)=>{if(fee)items.push([name,fee])};
+ add('基础价',base);
+
+ // 墙体加价
+ const wallMap={lt26:[260,360,460],gt26:[300,400,500]};
+ if(wallMap[$('wall').value]) add('墙体加价',wallMap[$('wall').value][idx]);
+
+ // 双包套独立列入定制项目
+ if($('doubleWrap').checked) add('双包套', [260,360,400][idx]);
+
+ // 超高超宽
+ add('超高超宽',v('oversize')*100);
+
+ // 欧派授权
+ if($('opei').checked) add('欧派授权费',[100,150,200][idx]);
+
+ // 封板
+ if($('seal').checked) add('封板（20cm以内）',[150,200,250][idx]);
+ if($('sealExtra').checked) add('封板超高',v('sealExtraN')*50);
+
+ // 足甲
+ if($('foot').checked) add('足甲1.0/2.0',[220,320,380][idx]);
+ if($('footWide').checked) add('足甲加高加宽一档',120);
+
+ // 门框/包边
+ const edgeMap={small:[60,80,100],big:[120,160,200]};
+ if(edgeMap[$('edge').value]) add('包边扩大',$('edge').value==='small'?edgeMap.small[idx]:edgeMap.big[idx]);
+ add('门楣加高',v('lintel')*50);
+ if($('bottom').value!=='0') add('下档加高',50);
+
+ // 拼接边框
+ if($('join').checked) add('拼接边框',v('joinN')*[70,100,130][idx]);
+
+ // 改色
+ const colors={normal:100,transfer:150,indoor:100,doublecolor:200};
+ add('改颜色',colors[$('color').value]||0);
+
+ // 填充
+ const fills={alu:[150,180,240],foam:[100,150,200]};
+ if(fills[$('fill').value]) add('填充物',fills[$('fill').value][idx]);
+
+ // 其他
+ if($('inside').checked) add('外平内开',50);
+ if($('anti').checked) add('防撬钢',150);
+ if($('customerLock').checked) add('锁体客户自供人工',50);
+ if($('finger').checked) add('指纹锁自供+开孔',120);
+ if($('custom').checked) add('定制费',150);
+ if($('manual').checked) add('其他人工/特殊费用',v('manualFee'));
+
+ // 批量定制规则：价格表注明同方向同尺寸5樘以上不需要加定制费
+ let subtotal=items.reduce((a,x)=>a+x[1],0);
+ let batchDiscount=0;
+ if($('batch').value==='yes' && $('custom').checked){batchDiscount=150; subtotal-=150;}
+
+ let total=Math.max(0,subtotal)*qty;
+ $('total').textContent=total.toLocaleString('zh-CN',{maximumFractionDigits:0});
+
+ let rows=items.map(x=>`<div class="row"><span>${x[0]}</span><span>¥${x[1].toLocaleString()}</span></div>`).join('');
+ if(batchDiscount) rows+=`<div class="row"><span>批量免定制费</span><span>-¥${batchDiscount}</span></div>`;
+ rows+=`<div class="row"><span>单樘小计</span><span>¥${Math.max(0,subtotal).toLocaleString()}</span></div>`;
+ rows+=`<div class="row"><span>数量</span><span>×${qty}</span></div>`;
+ $('breakdown').innerHTML=rows;
+
+ let warns=[];
+ const h=v('h'),w=v('w');
+ if(h>2500||w>1800) warns.push('门洞超过2500×1800mm，请人工确认。');
+ if(h>2700||w>1900) warns.push('外框超过2700×1900mm，原则上超出表内最大尺寸。');
+ if($('type').value==='single'&&w>1180) warns.push('单门宽度超过1180mm，请人工确认。');
+ if($('type').value==='single'&&w>1020) warns.push('见光宽超过1020mm，请人工确认。');
+ if(base===0) warns.push('该门型暂无基础价，请人工报价。');
+ if($('type').value==='pair' && $('style').value.includes('牛牛')) warns.push('牛牛对开价格表为“/”，请人工报价。');
+ if(h<1900) warns.push('高度低于1900mm：按规则无侧锁。');
+ $('status').innerHTML=warns.length?`<div class="warn">${warns.join('<br>')}</div>`:`<div class="ok">尺寸及项目暂未触发表内限制，以上为预估价。</div>`;
+}
+document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));
+document.querySelectorAll('input,select').forEach(e=>e.addEventListener('change',calc));
+calc();
+</script>
+</body>
+</html>
