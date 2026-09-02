@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全屋定制门报价计算器</title>
+    <style>
+        :root { --primary-color: #007bff; --bg-color: #f8f9fa; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); padding: 20px; color: #333; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 1.5rem; }
+        
+        .section-title { font-weight: bold; color: var(--primary-color); margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        
+        label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
+        select, input[type="number"], input[type="text"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 10px; }
+        .checkbox-group input { width: auto; margin-right: 10px; margin-bottom: 0; }
+        .checkbox-group label { margin-bottom: 0; font-weight: normal; }
+
+        .result-box { background-color: #e8f4fd; border: 1px solid #b6e4ff; padding: 20px; border-radius: 8px; margin-top: 30px; text-align: center; }
+        .total-price { font-size: 2rem; font-weight: bold; color: #d9534f; margin: 10px 0; }
+        .detail-list { text-align: left; font-size: 0.85rem; color: #666; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; }
+        .detail-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+
+        button { width: 100%; background-color: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        
+        .hidden { display: none; }
+        .note { font-size: 0.8rem; color: #888; margin-top: -10px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚪 定制门价格计算器</h1>
+
+    <div class="section-title">1. 基础配置</div>
+    <label>选择款式系列</label>
+    <select id="series">
+        <option value="799|1198|1598">长城/北明/东风/浪琴/艾菲尔等 (基础款)</option>
+        <option value="899|1348|1798">未来/欧米茄</option>
+        <option value="980|1421|1862">阳光/欧圆/致富</option>
+        <option value="849|1249|0">牛牛按长虹 (+150定制费)</option>
+        <option value="1020|1479|1938">福来/运来 (1.0/1.8板材)</option>
+    </select>
+
+    <label>开启方式</label>
+    <select id="openType" onchange="toggleInputs()">
+        <option value="single">单门</option>
+        <option value="child">子母门</option>
+        <option value="double">对开门</option>
+    </select>
+
+    <div class="section-title">2. 尺寸与特殊规格</div>
+    <div class="checkbox-group">
+        <input type="checkbox" id="isCustomSize" onchange="toggleInputs()">
+        <label for="isCustomSize">超高超宽 (每10cm加100元)</label>
+    </div>
+    <div id="customSizeInput" class="hidden">
+        <label>超出面积估算 (输入大概的“10cm”倍数数量，例如超20cm填2)</label>
+        <input type="number" id="extraSizeCount" value="0" min="0">
+    </div>
+
+    <div class="checkbox-group">
+        <input type="checkbox" id="needOuPaiAuth">
+        <label for="needOuPaiAuth">需要欧派授权费</label>
+    </div>
+    <p class="note">* 牛牛长虹及非标定制默认含150元定制费，此处自动计算。</p>
+
+    <div class="section-title">3. 墙体情况 (加价)</div>
+    <label>墙体厚度/类型</label>
+    <select id="wallType">
+        <option value="0">无(无加价)</option>
+        <option value="260|360|460">小于26cm</option>
+        <option value="300|400|500">大于26cm</option>
+    </select>
+
+    <div class="section-title">4. 双包套情况(加价)</div>
+    <label>有无双包套</label>
+    <select id="walldoubleType">
+        <option value="0">无(无加价)</option>
+        <option value="260|360|400">双包套</option>
+    </select>
+
+    <div class="section-title">5. 门框/包边调整</div>
+    <label>包边扩大情况</label>
+    <select id="frameExpand">
+        <option value="0">正常 (无加价)</option>
+        <option value="60|80|100">包边扩大 (3cm内)</option>
+        <option value="120|160|200">包边扩大 (3-8cm内)</option>
+    </select>
+
+    <div style="display: flex; gap: 10px;">
+        <div style="flex:1">
+            <label>门楣加高 (每10cm)</label>
+            <input type="number" id="topHighCount" value="0" min="0" placeholder="数量">
+        </div>
+        <div style="flex:1">
+            <label>下档加高 (每10cm)</label>
+            <input type="number" id="bottomHighCount" value="0" min="0" placeholder="数量">
+        </div>
+    </div>
+    
+    <div class="checkbox-group">
+        <input type="checkbox" id="needSpliceFrame">
+        <label for="needSpliceFrame">需要拼接边框</label>
+    </div>
+
+    <div class="section-title">6. 颜色与填充物</div>
+    <label>改色需求</label>
+    <select id="colorChange">
+        <option value="0">不改色</option>
+        <option value="100">普通改色</option>
+        <option value="150">改转印</option>
+        <option value="100">室内改花型</option>
+        <option value="200">双色门</option>
+    </select>
+
+    <label>填充物升级</label>
+    <select id="filling">
+        <option value="0">默认填充</option>
+        <option value="150|180|240">全铝箔</option>
+        <option value="100|150|200">全发泡</option>
+    </select>
+
+    <div class="section-title">7. 配件与其他</div>
+    <div class="checkbox-group">
+        <input type="checkbox" id="needSealPlate">
+        <label for="needSealPlate">加封板 (高度20cm以内)</label>
+    </div>
+    
+    <div class="checkbox-group">
+        <input type="checkbox" id="needFootArmor">
+        <label for="needFootArmor">加足甲 (1.0/2.0)</label>
+    </div>
+
+    <div style="flex:1">
+        <label>加封板 (超过20cm，每超过10cm加50元，每一个代表10cm)</label>
+        <input type="number" id="fengbanCount" value="0" min="0" placeholder="数量">
+    </div>
+
+    <label>锁体配置</label>
+    <select id="lockType">
+        <option value="0">标配锁体</option>
+        <option value="50">客户自供锁体 (仅人工费)</option>
+        <option value="120">指纹锁自供+开孔</option>
+    </select>
+    
+    <div class="checkbox-group">
+        <input type="checkbox" id="needOuterFlat">
+        <label for="needOuterFlat">外平内开 (+50元/樘)</label>
+    </div>
+
+    <button onclick="calculatePrice()">开始计算总价</button>
+    <button onclick="window.location.href='index.html'" style="margin-top: 12px; background: #6c757d;">返回首页</button>
+
+    <div class="result-box hidden" id="resultBox">
+        <div>预估总价</div>
+        <div class="total-price">¥ <span id="finalPrice">0</span></div>
+        <div class="detail-list" id="detailList"></div>
+    </div>
+</div>
+
+<script>
+    function toggleInputs() {
+        const isCustom = document.getElementById('isCustomSize').checked;
+        document.getElementById('customSizeInput').classList.toggle('hidden', !isCustom);
+    }
+
+    function getValueByType(valueStr) {
+        if (!valueStr || valueStr === "0") return 0;
+        const parts = valueStr.split('|');
+        const type = document.getElementById('openType').value;
+        if (type === 'single') return parseInt(parts[0]) || 0;
+        if (type === 'child') return parseInt(parts[1]) || 0;
+        if (type === 'double') return parseInt(parts[2]) || 0;
+        return 0;
+    }
+
+    function calculatePrice() {
+        let total = 0;
+        let details = [];
+        const type = document.getElementById('openType').value;
+        const typeName = type === 'single' ? '单门' : (type === 'child' ? '子母' : '对开');
+
+        const seriesVal = document.getElementById('series').value;
+        let basePrice = getValueByType(seriesVal);
+        const seriesIndex = document.getElementById('series').selectedIndex;
+        if (seriesIndex === 3) {
+            basePrice += 150;
+            details.push(`牛牛长虹定制费: +150`);
+        }
+        
+        total += basePrice;
+        details.push(`${typeName}基础价: ${basePrice}`);
+
+        if (document.getElementById('needOuPaiAuth').checked) {
+            let authFee = 0;
+            if (type === 'single') authFee = 100;
+            else if (type === 'child') authFee = 150;
+            else authFee = 200;
+            total += authFee;
+            details.push(`欧派授权费: +${authFee}`);
+        }
+
+        const wallVal = document.getElementById('wallType').value;
+        const wallPrice = getValueByType(wallVal);
+        if (wallPrice > 0) {
+            total += wallPrice;
+            details.push(`墙体加价: +${wallPrice}`);
+        }
+
+        const walldoubleVal = document.getElementById('walldoubleType').value;
+        const walldoublePrice = getValueByType(walldoubleVal);
+        if (walldoublePrice > 0) {
+            total += walldoublePrice;
+            details.push(`双包套加价: +${walldoublePrice}`);
+        }
+
+        const frameVal = document.getElementById('frameExpand').value;
+        const framePrice = getValueByType(frameVal);
+        if (framePrice > 0) {
+            total += framePrice;
+            details.push(`包边扩大: +${framePrice}`);
+        }
+
+        const topHighCount = parseInt(document.getElementById('topHighCount').value) || 0;
+        if (topHighCount > 0) {
+            const topHighPrice = topHighCount * 50;
+            total += topHighPrice;
+            details.push(`门楣加高费用 (${topHighCount}个10cm): +${topHighPrice}`);
+        }
+
+        const bottomHighCount = parseInt(document.getElementById('bottomHighCount').value) || 0;
+        if (bottomHighCount> 0) {
+            const bottomHighPrice = bottomHighCount * 50;
+            total += bottomHighPrice;
+            details.push(`下档加高费用 (${bottomHighCount}个10cm): +${bottomHighPrice}`);
+        }
+
+        if (document.getElementById('needSpliceFrame').checked) {
+            let splicePrice = 0;
+            if (type === 'single') splicePrice = 70;
+            else if (type === 'child') splicePrice = 100;
+            else splicePrice = 130;
+            total += splicePrice;
+            details.push(`拼接边框: +${splicePrice}`);
+        }
+
+        const colorPrice = parseInt(document.getElementById('colorChange').value) || 0;
+        if (colorPrice > 0) {
+            total += colorPrice;
+            details.push(`改色费用: +${colorPrice}`);
+        }
+
+        const fillVal = document.getElementById('filling').value;
+        const fillPrice = getValueByType(fillVal);
+        if (fillPrice > 0) {
+            total += fillPrice;
+            details.push(`填充物升级: +${fillPrice}`);
+        }
+
+        if (document.getElementById('needSealPlate').checked) {
+            let sealPrice = 0;
+            if (type === 'single') sealPrice = 150;
+            else if (type === 'child') sealPrice = 200;
+            else sealPrice = 250;
+            total += sealPrice;
+            details.push(`封板费用 (20cm内): +${sealPrice}`);
+        }
+
+        if (document.getElementById('needFootArmor').checked) {
+            let footPrice = 0;
+            if (type === 'single') footPrice = 220;
+            else if (type === 'child') footPrice = 320;
+            else footPrice = 380;
+            total += footPrice;
+            details.push(`足甲 (1.0/2.0): +${footPrice}`);
+        }
+
+        const lockPrice = parseInt(document.getElementById('lockType').value) || 0;
+        if (lockPrice > 0) {
+            total += lockPrice;
+            details.push(`锁体费用: +${lockPrice}`);
+        }
+
+        if (document.getElementById('needOuterFlat').checked) {
+            total += 50;
+            details.push(`外平内开工艺: +50`);
+        }
+
+        const fengbanCount = parseInt(document.getElementById('fengbanCount').value) || 0;
+        if (fengbanCount> 0) {
+            const fengbanCountPrice = fengbanCount * 50;
+            total += fengbanCountPrice;
+            details.push(`封板超20cm费用 (${fengbanCount}个10cm): +${fengbanCountPrice}`);
+        }
+
+        if (document.getElementById('isCustomSize').checked) {
+            const extraCount = parseInt(document.getElementById('extraSizeCount').value) || 0;
+            if (extraCount > 0) {
+                const extraPrice = extraCount * 100;
+                total += extraPrice;
+                details.push(`超高/超宽加价: +${extraPrice}`);
+            }
+        }
+
+        document.getElementById('finalPrice').innerText = total;
+        document.getElementById('detailList').innerHTML = details.map(item => `<div class="detail-item"><span>${item.split(':')[0]}</span><span>${item.split(':')[1]}</span></div>`).join('');
+        document.getElementById('resultBox').classList.remove('hidden');
+    }
+</script>
+
+</body>
+</html>
