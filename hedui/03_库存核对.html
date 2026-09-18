@@ -1,6 +1,6 @@
 <!doctype html><html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>库存实时核对</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>库存实时核对</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../supabase.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:Arial,"Microsoft YaHei",sans-serif}
 header{background:#111827;color:#fff;padding:18px 22px}h1{margin:0;font-size:22px}.sub{font-size:12px;color:#cbd5e1;margin-top:5px}
@@ -25,9 +25,7 @@ table{border-collapse:collapse;width:100%;min-width:1050px}th,td{padding:9px;bor
 <div class="tablebox"><table><thead><tr><th>行号</th><th>商品名称</th><th>尺寸</th><th>开向</th><th>系列</th>
 <th>系统库存<br><span class="small">上传时间</span></th><th>实际数量</th><th>差异</th><th>状态</th><th>盘点时间</th></tr></thead><tbody id="body"></tbody></table></div></main>
 <script>
-const SUPABASE_URL="https://bszucvsimgijzhuvzcnt.supabase.co";
-const SUPABASE_ANON_KEY="YOUR_SUPABASE_PUBLISHABLE_ANON_KEY";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const sb=supabaseClient;
 let rows=[];const visitorId=localStorage.getItem("visitor_id")||crypto.randomUUID();localStorage.setItem("visitor_id",visitorId);
 const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 function opts(id,v,first){let e=document.getElementById(id),cur=e.value;e.innerHTML=`<option value="">${first}</option>`+[...new Set(v.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"zh-CN")).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");e.value=cur}
