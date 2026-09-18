@@ -1,4 +1,5 @@
 const $=id=>document.getElementById(id);
+const uploadLink=document.createElement('a');uploadLink.href='hedui/04_库存上传.html';uploadLink.textContent='库存数据上传';uploadLink.style.marginRight='10px';document.querySelector('header').insertBefore(uploadLink,document.querySelector('header>a'));
 let warehouse=localStorage.getItem('selectedWarehouse')||WAREHOUSES[0].id;
 function initWarehouses(){const el=$('warehouse');el.innerHTML=WAREHOUSES.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');el.value=warehouse;el.onchange=()=>{warehouse=el.value;localStorage.setItem('selectedWarehouse',warehouse)}}
 function status(s){$('progress').textContent=s}

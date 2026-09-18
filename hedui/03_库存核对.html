@@ -1,0 +1,52 @@
+<!doctype html><html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>库存实时核对</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:Arial,"Microsoft YaHei",sans-serif}
+header{background:#111827;color:#fff;padding:18px 22px}h1{margin:0;font-size:22px}.sub{font-size:12px;color:#cbd5e1;margin-top:5px}
+main{max-width:1500px;margin:18px auto;padding:0 14px}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px}.num{font-size:24px;font-weight:700;margin-top:4px}
+.toolbar{margin:14px 0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;display:flex;gap:8px;flex-wrap:wrap}
+select,button,input{padding:9px;border:1px solid #d1d5db;border-radius:7px;background:#fff}button{cursor:pointer;font-weight:600}.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+.time{margin-left:auto;color:#64748b;font-size:12px;align-self:center}.tablebox{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:auto;max-height:72vh}
+table{border-collapse:collapse;width:100%;min-width:1050px}th,td{padding:9px;border-bottom:1px solid #e5e7eb;font-size:13px;white-space:nowrap}th{position:sticky;top:0;background:#f8fafc;text-align:left}
+.ok{background:#f0fdf4}.diff{background:#fff7ed}.un{background:#fef2f2}.badge{padding:3px 7px;border-radius:99px;font-size:11px;font-weight:700}.b1{background:#dcfce7;color:#166534}.b2{background:#ffedd5;color:#9a3412}.b3{background:#fee2e2;color:#991b1b}
+.actual{width:105px}.small{font-size:11px;color:#64748b;margin-top:3px}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.toolbar select,.toolbar button{width:100%}.time{width:100%;margin-left:0}}
+</style></head><body>
+<header><h1>库存实时核对系统</h1><div class="sub">公开查看 · 游客可提交实际数量 · 多设备实时同步</div></header>
+<main><div class="cards"><div class="card">商品记录<div class="num" id="total">0</div></div>
+<div class="card">系统库存<div class="num" id="sys">0</div></div><div class="card">已核对<div class="num" id="checked">0</div></div>
+<div class="card">数量一致<div class="num" id="same">0</div></div><div class="card">存在差异<div class="num" id="diff">0</div></div></div>
+<div class="toolbar"><select id="name"><option value="">全部商品名称</option></select><select id="size"><option value="">全部尺寸</option></select>
+<select id="direction"><option value="">全部开向</option></select><select id="status"><option value="all">全部</option><option value="unchecked">未核对</option>
+<option value="checked">已核对</option><option value="same">数量一致</option><option value="diff">存在差异</option></select>
+<button class="primary" onclick="reload()">刷新</button><span class="time" id="upload">库存表上传时间：-</span></div>
+<div class="tablebox"><table><thead><tr><th>行号</th><th>商品名称</th><th>尺寸</th><th>开向</th><th>系列</th>
+<th>系统库存<br><span class="small">上传时间</span></th><th>实际数量</th><th>差异</th><th>状态</th><th>盘点时间</th></tr></thead><tbody id="body"></tbody></table></div></main>
+<script>
+const SUPABASE_URL="https://bszucvsimgijzhuvzcnt.supabase.co";
+const SUPABASE_ANON_KEY="YOUR_SUPABASE_PUBLISHABLE_ANON_KEY";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let rows=[];const visitorId=localStorage.getItem("visitor_id")||crypto.randomUUID();localStorage.setItem("visitor_id",visitorId);
+const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function opts(id,v,first){let e=document.getElementById(id),cur=e.value;e.innerHTML=`<option value="">${first}</option>`+[...new Set(v.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"zh-CN")).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");e.value=cur}
+function populate(){opts("name",rows.map(x=>x.product_name),"全部商品名称");opts("size",rows.map(x=>x.size),"全部尺寸");opts("direction",rows.map(x=>x.direction),"全部开向")}
+function filtered(){let n=name.value,z=size.value,d=direction.value,s=status.value;return rows.filter(r=>
+(!n||r.product_name===n)&&(!z||r.size===z)&&(!d||r.direction===d)&&({all:1,unchecked:r.actual_count==null,checked:r.actual_count!=null,
+same:r.actual_count!=null&&r.actual_count===r.system_stock,diff:r.actual_count!=null&&r.actual_count!==r.system_stock}[s]))}
+function fmt(t){return t?new Date(t).toLocaleString("zh-CN",{hour12:false}):""}
+function render(){let a=filtered();body.innerHTML=a.map(r=>{let dd=r.actual_count==null?"":r.actual_count-r.system_stock,cl=r.actual_count==null?"un":dd===0?"ok":"diff";
+let st=r.actual_count==null?["未核对","b3"]:dd===0?["一致","b1"]:["有差异","b2"];return `<tr class="${cl}"><td>${esc(r.row_no)}</td><td>${esc(r.product_name)}</td>
+<td>${esc(r.size)}</td><td>${esc(r.direction)}</td><td>${esc(r.series)}</td><td><b>${r.system_stock}</b><div class="small">${fmt(r.inventory_uploaded_at)}</div></td>
+<td><input class="actual" type="number" min="0" step="1" value="${r.actual_count??""}" onchange="submitCount('${r.id}',this.value)" placeholder="输入数量"></td>
+<td>${dd===""?"":(dd>0?"+":"")+dd}</td><td><span class="badge ${st[1]}">${st[0]}</span></td><td>${fmt(r.checked_at)}</td></tr>`}).join("");
+total.textContent=rows.length;sys.textContent=rows.reduce((a,r)=>a+r.system_stock,0);checked.textContent=rows.filter(r=>r.actual_count!=null).length;
+same.textContent=rows.filter(r=>r.actual_count!=null&&r.actual_count===r.system_stock).length;diff.textContent=rows.filter(r=>r.actual_count!=null&&r.actual_count!==r.system_stock).length}
+async function reload(){let {data,error}=await sb.from("inventory").select("*").order("row_no");if(error){alert(error.message);return}rows=data||[];populate();render();
+let t=rows.map(r=>r.inventory_uploaded_at).sort().at(-1);upload.textContent="库存表上传时间："+fmt(t)}
+async function submitCount(id,v){let n=Number(v);if(!Number.isInteger(n)||n<0){alert("请输入大于等于0的整数");return}
+let {error}=await sb.rpc("submit_actual_count",{p_id:id,p_actual_count:n,p_visitor_id:visitorId});if(error){alert(error.message);return}await reload()}
+[name,size,direction,status].forEach(x=>x.addEventListener("change",render));
+sb.channel("inventory-live").on("postgres_changes",{event:"*",schema:"public",table:"inventory"},()=>reload()).subscribe();reload();
+</script></body></html>
