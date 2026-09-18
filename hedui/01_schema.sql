@@ -65,6 +65,27 @@ end $$;
 
 grant execute on function public.submit_actual_count(uuid,integer,text) to anon, authenticated;
 
+create or replace function public.reset_actual_count(
+  p_id uuid, p_visitor_id text default null
+) returns public.inventory
+language plpgsql security definer set search_path=public
+as $$
+declare old_count integer; result public.inventory;
+begin
+  select actual_count into old_count from public.inventory where id=p_id for update;
+  if not found then raise exception '库存记录不存在'; end if;
+
+  update public.inventory
+  set actual_count=null, checked_at=null, checked_by=null, updated_at=now()
+  where id=p_id returning * into result;
+
+  insert into public.inventory_audit(inventory_id,old_actual_count,new_actual_count,visitor_id)
+  values(p_id,old_count,null,p_visitor_id);
+  return result;
+end $$;
+
+grant execute on function public.reset_actual_count(uuid,text) to anon, authenticated;
+
 -- 实时同步
 do $$ begin
   alter publication supabase_realtime add table public.inventory;
