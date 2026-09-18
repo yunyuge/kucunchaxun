@@ -6,6 +6,7 @@
 <title>库存数据上传</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../supabase.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:Arial,"Microsoft YaHei",sans-serif}
 header{background:#111827;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}h1{margin:0;font-size:22px}.sub{font-size:12px;color:#cbd5e1;margin-top:5px}
@@ -22,9 +23,7 @@ header a{color:#bfdbfe;text-decoration:none;font-size:14px}main{max-width:760px;
 <label>选择 Excel 文件<input id="file" type="file" accept=".xlsx,.xls"></label><button id="upload">解析并覆盖库存数据</button><div id="status"></div></section>
 </main>
 <script>
-const SUPABASE_URL="https://bszucvsimgijzhuvzcnt.supabase.co";
-const SUPABASE_ANON_KEY="sb_publishable_YmHVJ0_CYY4UhWyPM5vDYg_p4XqAsRI";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const sb=supabaseClient;
 const $=id=>document.getElementById(id);
 function setLoggedIn(value){$("loginCard").classList.toggle("hidden",value);$("panel").classList.toggle("hidden",!value)}
 function status(text){$("status").textContent=text}
