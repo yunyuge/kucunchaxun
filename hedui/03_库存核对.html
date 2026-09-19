@@ -41,7 +41,7 @@ let st=r.actual_count==null?["未核对","b3"]:dd===0?["一致","b1"]:["有差�
 <td>${dd===""?"":(dd>0?"+":"")+dd}</td><td><span class="badge ${st[1]}">${st[0]}</span></td><td>${fmt(r.checked_at)}</td></tr>`}).join("");
 total.textContent=rows.length;sys.textContent=rows.reduce((a,r)=>a+r.system_stock,0);checked.textContent=rows.filter(r=>r.actual_count!=null).length;
 same.textContent=rows.filter(r=>r.actual_count!=null&&r.actual_count===r.system_stock).length;diff.textContent=rows.filter(r=>r.actual_count!=null&&r.actual_count!==r.system_stock).length}
-async function reload(){let {data,error}=await sb.from("inventory").select("*").order("row_no");if(error){alert(error.message);return}rows=data||[];populate();render();
+async function reload(){let all=[];const pageSize=1000;for(let from=0;;from+=pageSize){let {data,error}=await sb.from("inventory").select("*").order("row_no").range(from,from+pageSize-1);if(error){alert(error.message);return}all.push(...(data||[]));if(!data||data.length<pageSize)break}rows=all;populate();render();
 let t=rows.map(r=>r.inventory_uploaded_at).sort().at(-1);upload.textContent="库存表上传时间："+fmt(t)}
 async function submitCount(id,v){let n=Number(v);if(!Number.isInteger(n)||n<0){alert("请输入大于等于0的整数");return}
 let {error}=await sb.rpc("submit_actual_count",{p_id:id,p_actual_count:n,p_visitor_id:visitorId});if(error){alert(error.message);return}await reload()}
