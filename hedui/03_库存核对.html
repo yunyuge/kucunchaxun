@@ -9,9 +9,9 @@ main{max-width:1500px;margin:18px auto;padding:0 14px}.cards{display:grid;grid-t
 .toolbar{margin:14px 0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;display:flex;gap:8px;flex-wrap:wrap}
 select,button,input{padding:9px;border:1px solid #d1d5db;border-radius:7px;background:#fff}button{cursor:pointer;font-weight:600}.primary{background:#2563eb;color:#fff;border-color:#2563eb}
 .time{margin-left:auto;color:#64748b;font-size:12px;align-self:center}.tablebox{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:auto;max-height:72vh}
-table{border-collapse:collapse;width:100%;min-width:1050px}th,td{padding:9px;border-bottom:1px solid #e5e7eb;font-size:13px;white-space:nowrap}th{position:sticky;top:0;background:#f8fafc;text-align:left}
+table{border-collapse:collapse;width:100%;min-width:1050px;table-layout:fixed}th,td{padding:9px;border-bottom:1px solid #e5e7eb;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;background:#f8fafc;text-align:left}th:nth-child(1){width:70px}th:nth-child(2){width:140px}th:nth-child(3){width:120px}th:nth-child(4){width:120px}th:nth-child(5){width:80px}th:nth-child(6){width:150px}th:nth-child(7){width:210px}th:nth-child(8){width:70px}th:nth-child(9){width:80px}th:nth-child(10){width:140px}
 .ok{background:#f0fdf4}.diff{background:#fff7ed}.un{background:#fef2f2}.badge{padding:3px 7px;border-radius:99px;font-size:11px;font-weight:700}.b1{background:#dcfce7;color:#166534}.b2{background:#ffedd5;color:#9a3412}.b3{background:#fee2e2;color:#991b1b}
-.actual{width:105px}.reset{padding:5px 7px;margin-left:5px;background:#fff;color:#9a3412;border:1px solid #fdba74;font-size:11px}.small{font-size:11px;color:#64748b;margin-top:3px}
+.actual{width:85px}.confirm{padding:5px 7px;margin-left:5px;background:#2563eb;color:#fff;border:1px solid #2563eb;font-size:11px}.reset{padding:5px 7px;margin-left:5px;background:#fff;color:#9a3412;border:1px solid #fdba74;font-size:11px}.small{font-size:11px;color:#64748b;margin-top:3px}
 @media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.toolbar select,.toolbar button{width:100%}.time{width:100%;margin-left:0}}
 </style></head><body>
 <header><h1>库存实时核对系统</h1><div class="sub">公开查看 · 游客可提交实际数量 · 多设备实时同步</div></header>
@@ -37,7 +37,7 @@ function fmt(t){return t?new Date(t).toLocaleString("zh-CN",{hour12:false}):""}
 function render(){let a=filtered();body.innerHTML=a.map(r=>{let dd=r.actual_count==null?"":r.actual_count-r.system_stock,cl=r.actual_count==null?"un":dd===0?"ok":"diff";
 let st=r.actual_count==null?["未核对","b3"]:dd===0?["一致","b1"]:["有差异","b2"];return `<tr class="${cl}"><td>${esc(r.row_no)}</td><td>${esc(r.product_name)}</td>
 <td>${esc(r.size)}</td><td>${esc(r.direction)}</td><td>${esc(r.series)}</td><td><b>${r.system_stock}</b><div class="small">${fmt(r.inventory_uploaded_at)}</div></td>
-<td><input class="actual" type="number" min="0" step="1" value="${r.actual_count??""}" onchange="submitCount('${r.id}',this.value)" placeholder="输入数量">${r.actual_count!=null?`<button class="reset" onclick="resetCount('${r.id}')">回退未核对</button>`:""}</td>
+<td><input class="actual" type="number" min="0" step="1" value="${r.actual_count??""}" placeholder="输入数量"><button class="confirm" onclick="confirmCount('${r.id}',this.previousElementSibling)">确认</button>${r.actual_count!=null?`<button class="reset" onclick="resetCount('${r.id}')">回退未核对</button>`:""}</td>
 <td>${dd===""?"":(dd>0?"+":"")+dd}</td><td><span class="badge ${st[1]}">${st[0]}</span></td><td>${fmt(r.checked_at)}</td></tr>`}).join("");
 total.textContent=rows.length;sys.textContent=rows.reduce((a,r)=>a+r.system_stock,0);checked.textContent=rows.filter(r=>r.actual_count!=null).length;
 same.textContent=rows.filter(r=>r.actual_count!=null&&r.actual_count===r.system_stock).length;diff.textContent=rows.filter(r=>r.actual_count!=null&&r.actual_count!==r.system_stock).length}
@@ -45,6 +45,7 @@ async function reload(){let {data,error}=await sb.from("inventory").select("*").
 let t=rows.map(r=>r.inventory_uploaded_at).sort().at(-1);upload.textContent="库存表上传时间："+fmt(t)}
 async function submitCount(id,v){let n=Number(v);if(!Number.isInteger(n)||n<0){alert("请输入大于等于0的整数");return}
 let {error}=await sb.rpc("submit_actual_count",{p_id:id,p_actual_count:n,p_visitor_id:visitorId});if(error){alert(error.message);return}await reload()}
+function confirmCount(id,input){submitCount(id,input.value)}
 async function resetCount(id){if(!confirm("确定将这条记录回退为未核对吗？"))return;let {error}=await sb.rpc("reset_actual_count",{p_id:id,p_visitor_id:visitorId});if(error){alert(error.message);return}await reload()}
 ["size","direction","status"].map(id=>document.getElementById(id)).forEach(x=>x.addEventListener("change",render));
 document.getElementById("name").addEventListener("change",()=>{populate();render()});
