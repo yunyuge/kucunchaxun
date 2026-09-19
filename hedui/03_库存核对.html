@@ -29,7 +29,7 @@ const sb=supabaseClient;
 let rows=[];const visitorId=localStorage.getItem("visitor_id")||crypto.randomUUID();localStorage.setItem("visitor_id",visitorId);
 const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 function opts(id,v,first){let e=document.getElementById(id),cur=e.value;const values=[...new Set(v.map(x=>String(x??"").trim()).filter(Boolean))];e.innerHTML=`<option value="">${first}</option>`+values.sort((a,b)=>a.localeCompare(b,"zh-CN")).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");e.value=values.includes(cur)?cur:""}
-function populate(){opts("name",rows.map(x=>x.product_name),"全部商品名称");opts("size",rows.map(x=>x.size),"全部尺寸");opts("direction",rows.map(x=>x.direction),"全部开向")}
+function populate(){const n=document.getElementById("name").value;const available=n?rows.filter(x=>String(x.product_name??"").trim()===n):rows;opts("name",rows.map(x=>x.product_name),"全部商品名称");opts("size",available.map(x=>x.size),"全部尺寸");opts("direction",available.map(x=>x.direction),"全部开向")}
 function filtered(){const n=document.getElementById("name").value,z=document.getElementById("size").value,d=document.getElementById("direction").value,s=document.getElementById("status").value;return rows.filter(r=>
 (!n||String(r.product_name??"").trim()===n)&&(!z||String(r.size??"").trim()===z)&&(!d||String(r.direction??"").trim()===d)&&({all:1,unchecked:r.actual_count==null,checked:r.actual_count!=null,
 same:r.actual_count!=null&&r.actual_count===r.system_stock,diff:r.actual_count!=null&&r.actual_count!==r.system_stock}[s]))}
@@ -46,6 +46,7 @@ let t=rows.map(r=>r.inventory_uploaded_at).sort().at(-1);upload.textContent="库
 async function submitCount(id,v){let n=Number(v);if(!Number.isInteger(n)||n<0){alert("请输入大于等于0的整数");return}
 let {error}=await sb.rpc("submit_actual_count",{p_id:id,p_actual_count:n,p_visitor_id:visitorId});if(error){alert(error.message);return}await reload()}
 async function resetCount(id){if(!confirm("确定将这条记录回退为未核对吗？"))return;let {error}=await sb.rpc("reset_actual_count",{p_id:id,p_visitor_id:visitorId});if(error){alert(error.message);return}await reload()}
-["name","size","direction","status"].map(id=>document.getElementById(id)).forEach(x=>x.addEventListener("change",render));
+["size","direction","status"].map(id=>document.getElementById(id)).forEach(x=>x.addEventListener("change",render));
+document.getElementById("name").addEventListener("change",()=>{populate();render()});
 sb.channel("inventory-live").on("postgres_changes",{event:"*",schema:"public",table:"inventory"},()=>reload()).subscribe();reload();
 </script></body></html>
