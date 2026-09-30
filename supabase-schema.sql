@@ -36,3 +36,16 @@ using (true) with check (true);
 grant usage on schema public to anon, authenticated;
 grant select on public.door_batches to anon, authenticated;
 grant insert, update, delete on public.door_batches to authenticated;
+
+-- 下单建议页监听龙卷风仓库数据变化；若已存在则不重复添加。
+do $$ begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'door_batches'
+     ) then
+    alter publication supabase_realtime add table public.door_batches;
+  end if;
+end $$;

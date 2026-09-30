@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>下单建议 | 防盗门库存系统</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+:root{font-family:Inter,"Microsoft YaHei",Arial,sans-serif;color:#182338;background:#f3f6fb;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#111c32;color:#fff;padding:18px max(20px,calc((100% - 1440px)/2))}
+h1{margin:0;font-size:21px}header p{margin:5px 0 0;color:#bdc9dc;font-size:12px}a{color:#dbeafe;text-decoration:none;font-size:13px}main{max-width:1440px;margin:24px auto;padding:0 18px}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card,.toolbar,.tablebox{background:#fff;border:1px solid #e3e9f2;border-radius:12px;box-shadow:0 4px 14px #1b2b4710}
+.metric{padding:16px 18px}.metric span{color:#64748b;font-size:13px}.metric strong{display:block;margin-top:7px;font-size:25px;letter-spacing:-.4px}.metric small{display:block;color:#94a3b8;margin-top:3px}
+.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:13px;margin:14px 0}.toolbar input,.toolbar select,.btn{min-height:39px;padding:8px 12px;border:1px solid #d5deea;border-radius:8px;background:white;color:#26364d;font:inherit;font-size:13px}.toolbar input{min-width:230px;flex:1}.btn{cursor:pointer;font-weight:650}.btn.primary{background:#2563eb;color:white;border-color:#2563eb}.btn.soft{background:#eff6ff;color:#1d4ed8;border-color:#dbeafe}.btn:hover{filter:brightness(.97)}.muted{font-size:12px;color:#64748b;margin-left:auto}
+.notice{display:flex;align-items:flex-start;gap:10px;padding:12px 15px;margin-bottom:14px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-size:13px;line-height:1.65}.notice.error{border-color:#fecaca;background:#fef2f2;color:#991b1b}.tablebox{overflow:auto;max-height:68vh}table{width:100%;min-width:1050px;border-collapse:collapse}th,td{padding:11px 12px;border-bottom:1px solid #edf0f5;text-align:left;font-size:13px;white-space:nowrap}th{position:sticky;top:0;z-index:1;background:#f8fafc;color:#536176;font-weight:650}tbody tr:hover{background:#f8fbff}.number{text-align:right;font-variant-numeric:tabular-nums}.recommend{font-weight:750;color:#b42318}.none{color:#14804a}.badge{display:inline-block;padding:4px 8px;border-radius:99px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:700}.badge.ok{background:#dcfce7;color:#166534}.empty{text-align:center;padding:40px;color:#64748b}.hidden{display:none!important}
+.modal{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:18px;background:#0f172a99}.dialog{width:min(680px,100%);max-height:90vh;overflow:auto;padding:22px;background:white;border-radius:14px;box-shadow:0 22px 70px #0f172a55}.dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.dialog h2{margin:0;font-size:19px}.close{border:0;background:transparent;font-size:25px;cursor:pointer;color:#64748b}.dialog p,.dialog li{font-size:13px;color:#536176;line-height:1.7}.dialog label{display:block;margin:14px 0 7px;font-size:13px;font-weight:700}.dialog input[type=file]{display:block;width:100%;padding:13px;border:1px dashed #94a3b8;border-radius:9px;background:#f8fafc}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.status{min-height:20px;margin-top:12px;font-size:13px;color:#334155;white-space:pre-wrap}.small{font-size:12px;color:#64748b}
+@media(max-width:800px){header{padding:15px 18px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.metric{padding:13px}.metric strong{font-size:21px}.muted{width:100%;margin:2px 0 0}.toolbar input{min-width:100%}.toolbar .btn,.toolbar select{flex:1}}
+.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at top left,#dbeafe 0,transparent 45%),#f3f6fb}.auth-card{width:min(420px,100%);padding:28px;background:#fff;border:1px solid #e3e9f2;border-radius:16px;box-shadow:0 20px 60px #1b2b4718}.auth-card h1{color:#182338;font-size:23px}.auth-card p{margin:8px 0 22px;color:#64748b;font-size:13px;line-height:1.65}.auth-card label{display:block;margin:14px 0 6px;font-size:13px;font-weight:650}.auth-card input{width:100%;height:43px;padding:10px 12px;border:1px solid #d5deea;border-radius:8px;font:inherit}.auth-card .btn{width:100%;margin-top:18px;min-height:43px}.auth-status{min-height:22px;margin-top:12px;color:#b42318;font-size:13px}
+.ordered-row td,.ordered-row:hover td{background:#dcfce7!important}.ordered-row td{border-bottom-color:#bbf7d0}.btn.confirm-order{min-height:30px;padding:5px 9px;background:#2563eb;color:#fff;border-color:#2563eb;font-size:12px}.ordered-row .btn.confirm-order{background:#15803d;border-color:#15803d}
+.degree-medium{color:#ca8a04;font-weight:750}.degree-high{color:#dc2626;font-weight:750}
+</style>
+</head>
+<body>
+<section id="authGate" class="auth-wrap"><div class="auth-card"><h1>登录后查看下单建议</h1><p>请输入已配置的 Supabase 管理员邮箱和密码。</p><form id="loginForm"><label for="authEmail">邮箱</label><input id="authEmail" type="email" autocomplete="username" required><label for="authPassword">密码</label><input id="authPassword" type="password" autocomplete="current-password" required><button id="loginButton" class="btn primary" type="submit">登录验证</button></form><div id="authStatus" class="auth-status" role="status"></div><a href="index.html" style="color:#2563eb;font-size:13px">返回首页</a></div></section>
+<div id="appShell" class="hidden">
+<header><div><h1>销售与库存下单建议</h1><p>销售需求 −（库存 + 龙卷风仓库未入库）= 建议补货数量</p></div><div style="display:flex;align-items:center;gap:16px"><button class="btn" id="logoutButton">退出登录</button><a href="index.html">返回首页</a></div></header>
+<main>
+<div id="loadNotice" class="notice">正在读取龙卷风仓库未入库明细…</div>
+<section class="summary">
+<div class="card metric"><span>商品种类</span><strong id="metricTotal">0</strong><small>导入表中的不同商品</small></div>
+<div class="card metric"><span>建议下单种类</span><strong id="metricNeed">0</strong><small>月均销量大于库存与未入库数量</small></div>
+<div class="card metric"><span>建议下单总量</span><strong id="metricQty">0</strong><small>所有商品缺口之和</small></div>
+<div class="card metric"><span>未入库总量</span><strong id="metricPending">0</strong><small>龙卷风仓库当前未入库数量</small></div>
+</section>
+<section class="toolbar">
+<input id="search" type="search" placeholder="搜索商品名称、尺寸、开向或系列">
+<select id="filterName" aria-label="按商品名称筛选"><option value="">全部商品名称</option></select>
+<select id="filterSize" aria-label="按尺寸筛选"><option value="">全部尺寸</option></select>
+<select id="view"><option value="all">全部商品</option><option value="need">仅显示需要下单</option></select>
+<button class="btn primary" id="openImport">导入三个月销售量</button>
+<button class="btn soft" id="template">下载三个月销量模板</button>
+<button class="btn" id="refresh">刷新未入库数据</button>
+<span class="muted" id="importInfo">尚未导入销售与库存数据</span>
+</section>
+<div class="notice" id="dataNote">请导入 Excel。支持一张表同时包含销售数量、库存数量，也支持“销售”“库存”两个工作表分别提供数据。导入数据保存在当前浏览器中。</div>
+<section class="tablebox"><table><thead><tr><th>商品名称</th><th>尺寸</th><th>开向</th><th class="number">3个月平均销量</th><th class="number">库存数量</th><th class="number">未入库数量</th><th class="number">程度</th><th class="number">建议下单</th><th>提示</th><th>操作</th></tr></thead><tbody id="rows"></tbody><div class="empty hidden" id="empty">没有符合条件的商品。请先导入销售与库存数据。</div></section>
+</main>
+<div class="modal hidden" id="importModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<section class="dialog"><div class="dialog-head"><h2 id="modalTitle">导入三个月销售数据</h2><button class="close" id="closeImport" aria-label="关闭">×</button></div>
+<p>导入包含三个月销售数据的 Excel（.xlsx / .xls）。需要商品全名、规格、型号，以及“三个月销售总量”一列；也支持三列分别填写每月销量（例如“7月销售数量、8月销售数量、9月销售数量”）。</p>
+<ul><li>单列总量按“三个月销售总量 ÷ 3”计算月均销量；三列月销量则按三个月算术平均值计算。</li><li>本次导入只更新销售数据，已有库存数量保持不变；尚无库存记录的新商品库存按 0 计算。</li><li>“型号”中的外开/内开和左右会自动拆分，与龙卷风仓库数据匹配；导入数据保存在当前浏览器。</li></ul>
+<label for="excelFile">选择 Excel 文件</label><input id="excelFile" type="file" accept=".xlsx,.xls">
+<div class="actions"><button class="btn primary" id="doImport">解析并导入</button><button class="btn" id="cancelImport">取消</button></div><div class="status" id="importStatus"></div></section>
+</div>
+</div>
+<script>
+const sb=supabaseClient;
+const STORE_KEY="door_order_planner_v1";
+const ORDERED_KEY="door_order_confirmed_v1";
+const $=id=>document.getElementById(id);
+let imported=[];
+let pendingByKey=new Map();
+let orderedProducts=readOrdered();
+let loadFailed=false;
+let authorized=false;
+let pendingRefreshTimer=null;
+let pendingPollTimer=null;
+let pendingChannel=null;
+const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const clean=value=>String(value??"").replace(/[\u0000-\u001f\u007f\ufeff\s]/g,"").trim();
+const headerKey=value=>clean(value).replace(/[：:()（）_\-·.]/g,"").toLowerCase();
+const normalizeDirection=value=>clean(value).replace(/外开/g,"外包").replace(/内开/g,"内包").toLowerCase();
+const normalizeSize=value=>clean(value).toLowerCase().replace(/[×✕x＊]/g,"*");
+function productKey(row){return JSON.stringify([clean(row.row_no),clean(row.product_name),clean(row.size),normalizeDirection(row.direction),clean(row.series)])}
+function splitOpeningSide(opening,side=""){
+const raw=clean(opening).toLowerCase().replace(/外包/g,"外").replace(/内包/g,"内");
+const sideText=clean(side).toLowerCase();
+const sideMatch=sideText.match(/[左右]/)||raw.match(/([左右])$/);
+const orientationMatch=raw.match(/(外|内)(?=[左右]$)/)||raw.match(/^(外|内)(?:开)?$/);
+const orientation=orientationMatch?.[1]||raw.replace(/[左右]$/g,"").replace(/开$/g,"");
+const canonicalOpening=orientation.includes("外")?"外开":orientation.includes("内")?"内开":orientation;
+return {opening:canonicalOpening,side:sideMatch?.[0]||sideText}
+}
+function productMatchKey(name,size,opening,side="") {const parts=splitOpeningSide(opening,side);return JSON.stringify([clean(name).toLowerCase(),normalizeSize(size),parts.opening,parts.side])}
+function number(value,label,rowNumber,allowNegative=false){if(value===null||value===undefined||String(value).trim()==="")return null;const n=Number(String(value).replace(/,/g,""));if(!Number.isInteger(n)||(!allowNegative&&n<0))throw new Error(`第 ${rowNumber} 行${label}必须是${allowNegative?"整数":"非负整数"}`);return n}
+function readSaved(){try{const value=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");return Array.isArray(value)?value:[]}catch{return []}}
+function readOrdered(){try{const value=JSON.parse(localStorage.getItem(ORDERED_KEY)||"{}");return value&&typeof value==="object"&&!Array.isArray(value)?value:{}}catch{return {}}}
+function isOrdered(row){return !!orderedProducts[productMatchKey(row.product_name,row.size,row.direction)]}
+function toggleOrdered(key){if(orderedProducts[key])delete orderedProducts[key];else orderedProducts[key]={confirmed_at:new Date().toISOString()};localStorage.setItem(ORDERED_KEY,JSON.stringify(orderedProducts));render()}
+function saveImported(){localStorage.setItem(STORE_KEY,JSON.stringify(imported));updateImportInfo();updateFilters()}
+function updateImportInfo(){const t=localStorage.getItem(STORE_KEY+"_time");$("importInfo").textContent=imported.length?`已导入 ${imported.length} 种商品${t?" · "+new Date(t).toLocaleString("zh-CN",{hour12:false}):""}`:"尚未导入销售与库存数据"}
+function amount(value){return Number(value||0).toLocaleString("zh-CN")}
+function averageAmount(value){return Number(value||0).toLocaleString("zh-CN",{minimumFractionDigits:0,maximumFractionDigits:2})}
+function mergeSalesImport(parsed){const byMatch=new Map(imported.map(row=>[productMatchKey(row.product_name,row.size,row.direction),row]));for(const row of parsed){const key=productMatchKey(row.product_name,row.size,row.direction),old=byMatch.get(key)||{...row,system_stock:0};old.sales_quantity=row.sales_quantity;if(row.sales_months)old.sales_months=row.sales_months;byMatch.set(key,old)}imported=[...byMatch.values()]}
+function degree(order,sales){const ratio=sales>0?order/sales*100:null;return {text:ratio===null?"—":`${Math.round(ratio)}%`,className:ratio>50?"degree-high":ratio>20&&ratio<50?"degree-medium":""}}
+function fillFilter(id,values,placeholder,currentValue){const select=$(id);const unique=[...new Set(values.map(value=>String(value??"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"zh-CN",{numeric:true}));select.innerHTML=`<option value="">${placeholder}</option>`+unique.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join("");select.value=unique.includes(currentValue)?currentValue:""}
+function updateFilters(){const selectedName=$("filterName").value,selectedSize=$("filterSize").value;fillFilter("filterName",imported.map(row=>row.product_name),"全部商品名称",selectedName);const available=selectedName?imported.filter(row=>row.product_name===selectedName):imported;fillFilter("filterSize",available.map(row=>row.size),"全部尺寸",selectedSize)}
+function salesMonth(header){const raw=String(header??"").trim();if(!/(销售|销量|sales|sold)/i.test(raw))return null;let match=raw.match(/(20\d{2})\s*(?:年|[-/.])\s*(\d{1,2})\s*月?/);if(match)return `${match[1]}-${match[2]}`;match=raw.match(/(?:^|\D)(\d{1,2})\s*月/);return match?match[1]:null}
+function headersFor(sheet){const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:true});const aliases={row_no:["行号","序号","编号","row_no"],product_name:["商品全名","商品名称","产品名称","货品名称","物料名称","品名","商品","门型","款号","款式","style","product_name"],size:["尺寸","尺寸规格","规格","size"],direction:["开向","开门方向","方向","型号","direction","opening"],series:["系列","series"],sales:["三个月销售总量","三月销售总量","三个月总销量","三月总销量","总销量","销量总计","近三个月销售","销售数量","销售数量合计","销售总量","销售合计","销售件数","销量数量","销量合计","累计销量","本月销量","销量","销售数","sales_quantity","sales_qty"],stock:["库存数量","库存量","库存数","当前库存","期末库存","期末数量","结存数量","现存量","实际库存","实际盘点数","可用库存","系统库存","库存","stock_quantity","system_stock"]};
+let headerIndex=-1,columns={};for(let i=0;i<Math.min(matrix.length,30);i++){const heads=matrix[i].map(headerKey);const found={};for(const [field,names] of Object.entries(aliases)){found[field]=heads.findIndex(h=>names.map(headerKey).some(alias=>h===alias||h.includes(alias)))}
+found.sales_months=matrix[i].map((value,index)=>({index,month:salesMonth(value)})).filter(item=>item.month!==null);if(found.sales_months.length>=3)found.sales=-1;
+for(let col=0;col<heads.length;col++){const h=heads[col];if(found.sales<0&&found.sales_months.length<3&&/(销售|销量|sales)/.test(h)&&/(数量|件数|总量|合计|累计|本月|数$|qty|quantity)/.test(h))found.sales=col;if(found.stock<0&&/(库存|现存|结存|stock)/.test(h)&&/(数量|件数|总量|合计|盘点|可用|期末|数$|qty|quantity|量$)/.test(h))found.stock=col}
+if(found.product_name>=0&&found.size>=0&&found.direction>=0){headerIndex=i;columns=found;break}}
+if(headerIndex<0)return null;
+const heads=matrix[headerIndex].map(headerKey);
+const sheetName=headerKey(sheet.__name||"");if(columns.sales<0&&columns.sales_months.length<3&&columns.stock<0){const generic=heads.findIndex(h=>["数量","qty","quantity","数"].includes(h));if(generic>=0){if(/销售|销量|sales/.test(sheetName))columns.sales=generic;else if(/库存|stock|inventory|结存/.test(sheetName))columns.stock=generic}}
+return {matrix,headerIndex,columns,headers:matrix[headerIndex]}}
+function parseWorkbook(workbook){
+const merged=new Map();let foundSales=false,foundStock=false,detectedHeaders=[],detectedSheet="",productRows=0,skippedRows=0;
+for(const sheetName of workbook.SheetNames){
+const sheet=workbook.Sheets[sheetName];sheet.__name=sheetName;const parsed=headersFor(sheet);if(!parsed)continue;
+const {matrix,headerIndex,columns,headers}=parsed;detectedHeaders=headers.map(value=>String(value||"")).filter(Boolean);detectedSheet=sheetName;
+if(columns.sales_months?.length>=3)foundSales=true;else if(columns.sales>=0)foundSales=true;
+for(let index=headerIndex+1;index<matrix.length;index++){
+const cells=matrix[index],get=field=>columns[field]>=0?cells[columns[field]]:"";
+const row={row_no:clean(get("row_no")),product_name:clean(get("product_name")),size:clean(get("size")),direction:normalizeDirection(get("direction")),series:clean(get("series"))};
+if(!row.product_name&&!row.size&&!row.direction)continue;
+if(!row.product_name||!row.size||!row.direction){skippedRows++;continue}
+productRows++;const excelRow=index+1;
+let sales=null,sales_months=null;
+if(columns.sales_months?.length>=3){sales_months=columns.sales_months.slice(0,3).map(column=>{const cell=cells[column.index];return cell===null||cell===undefined||String(cell).trim()===""?0:number(cell,`${column.month}月销售数量`,excelRow)});sales=sales_months.reduce((sum,value)=>sum+value,0)/3}
+else if(columns.sales>=0){const total=number(get("sales"),"三个月销售总量",excelRow);sales=total===null?null:total/3}
+if(sales===null)continue;
+const key=productMatchKey(row.product_name,row.size,row.direction),old=merged.get(key)||{...row,sales_quantity:0,system_stock:0};
+old.sales_quantity+=sales;if(sales_months){if(old.sales_months)old.sales_months=old.sales_months.map((value,index)=>value+sales_months[index]);else old.sales_months=sales_months}merged.set(key,old)
+}}
+if(!detectedHeaders.length)throw new Error("未识别到商品表头。需要商品全名、规格、型号，以及销售数量列。");
+if(!foundSales)throw new Error(`已识别到工作表“${detectedSheet}”的商品表头，但没有识别到销售数量列。请添加三列带月份的销售数量，例如“7月销售数量、8月销售数量、9月销售数量”。当前表头：${detectedHeaders.join("、")}`);
+if(!merged.size)throw new Error(`已找到 ${productRows} 行完整商品，但数量单元格为空或无法识别，请检查销售数量和库存数量列。`);
+const result=[...merged.values()];result.skippedCount=skippedRows;return result
+}
+async function loadPending(){const notice=$("loadNotice");notice.classList.remove("error");notice.textContent="正在读取龙卷风仓库未入库明细…";loadFailed=false;
+try{const collected=[],pageSize=1000;for(let from=0;;from+=pageSize){const {data,error}=await sb.from("door_batches").select("style,size,opening,side,pending_quantity").eq("warehouse","warehouse-1").gt("pending_quantity",0).range(from,from+pageSize-1);if(error)throw error;collected.push(...(data||[]));if(!data||data.length<pageSize)break}
+pendingByKey=new Map();for(const row of collected){const key=productMatchKey(row.style,row.size,row.opening,row.side);pendingByKey.set(key,(pendingByKey.get(key)||0)+Number(row.pending_quantity||0))}
+const matched=imported.filter(row=>pendingByKey.has(productMatchKey(row.product_name,row.size,row.direction))).length;notice.textContent=`龙卷风未入库已同步：${collected.length.toLocaleString("zh-CN")} 条明细，${pendingByKey.size.toLocaleString("zh-CN")} 种商品（按名称、尺寸、开向及左右匹配）；已匹配当前导入商品 ${matched}/${imported.length} 种，合计 ${amount([...pendingByKey.values()].reduce((a,b)=>a+b,0))} 件。`;render()
+}catch(error){loadFailed=true;notice.classList.add("error");notice.textContent="读取龙卷风仓库数据失败："+error.message+"。未入库数量暂不计入，请检查网络或云端配置后刷新。";render()}}
+function watchPending(){if(!authorized)return;if(!pendingChannel)pendingChannel=sb.channel("order-planner-tornado-live").on("postgres_changes",{event:"*",schema:"public",table:"door_batches",filter:"warehouse=eq.warehouse-1"},()=>{clearTimeout(pendingRefreshTimer);pendingRefreshTimer=setTimeout(()=>{if(authorized)void loadPending()},700)}).subscribe();if(!pendingPollTimer)pendingPollTimer=setInterval(()=>{if(authorized)void loadPending()},60000)}
+function stopWatchingPending(){clearTimeout(pendingRefreshTimer);clearInterval(pendingPollTimer);pendingRefreshTimer=null;pendingPollTimer=null;if(pendingChannel){void sb.removeChannel(pendingChannel);pendingChannel=null}}
+function render(){const query=clean($("search").value).toLowerCase(),selectedName=$("filterName").value,selectedSize=$("filterSize").value,needOnly=$("view").value==="need";const calculated=imported.map(row=>{const pending=loadFailed?0:(pendingByKey.get(productMatchKey(row.product_name,row.size,row.direction))||0);const sales=Number(row.sales_quantity||0),stock=Number(row.system_stock||0),available=stock+pending,order=Math.ceil(Math.max(0,sales-available));return {...row,pending,available,order,ordered:isOrdered(row)}}).sort((a,b)=>b.order-a.order||b.sales_quantity-a.sales_quantity||a.product_name.localeCompare(b.product_name,"zh-CN"));
+const filtered=calculated.filter(row=>{const searchable=[row.product_name,row.size,row.direction].join(" ").toLowerCase();return (!query||searchable.includes(query))&&(!selectedName||row.product_name===selectedName)&&(!selectedSize||row.size===selectedSize)&&(!needOnly||row.order>0)});
+$("rows").innerHTML=filtered.map(row=>{const key=productMatchKey(row.product_name,row.size,row.direction),degreeValue=degree(row.order,row.sales_quantity);return `<tr class="${row.ordered?"ordered-row":""}"><td>${esc(row.product_name)}</td><td>${esc(row.size)}</td><td>${esc(row.direction)}</td><td class="number">${averageAmount(row.sales_quantity)}</td><td class="number">${amount(row.system_stock)}</td><td class="number">${loadFailed?"—":amount(row.pending)}</td><td class="number ${degreeValue.className}">${degreeValue.text}</td><td class="number ${row.order?"recommend":"none"}">${amount(row.order)}</td><td>${row.ordered?'<span class="badge ok">已下单</span>':row.order?'<span class="badge">建议下单</span>':'<span class="badge ok">暂不需要</span>'}</td><td><button class="btn confirm-order" type="button" data-order-key="${esc(key)}">${row.ordered?"取消确认":"确认下单"}</button></td></tr>`}).join("");
+$("empty").classList.toggle("hidden",filtered.length>0);$("metricTotal").textContent=amount(calculated.length);$("metricNeed").textContent=amount(calculated.filter(row=>row.order>0).length);$("metricQty").textContent=amount(calculated.reduce((sum,row)=>sum+row.order,0));$("metricPending").textContent=loadFailed?"—":amount([...pendingByKey.values()].reduce((sum,value)=>sum+value,0));
+$("dataNote").textContent=imported.length?`计算规则：建议下单量 = 向上取整(max(0，三个月平均销量 − 库存数量 − 龙卷风未入库数量))。导入三个月销量不会改动库存；当前共有 ${calculated.filter(row=>row.order>0).length} 种商品存在缺口。`:"请导入包含三列月份销量的 Excel。系统计算三个月平均销量，并保留现有库存数量不变。"}
+function openModal(){$("importModal").classList.remove("hidden");$("importStatus").textContent=""}
+function closeModal(){$("importModal").classList.add("hidden")}
+function downloadTemplate(){const data=[["商品全名","规格","型号","三个月销售总量"],["示例商品","2050*960","外包外左",60]];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),"三个月销售");XLSX.writeFile(wb,"三个月销售数量导入模板.xlsx")}
+$("openImport").onclick=openModal;$("closeImport").onclick=closeModal;$("cancelImport").onclick=closeModal;$("template").onclick=downloadTemplate;$("refresh").onclick=loadPending;$("search").addEventListener("input",render);$("view").addEventListener("change",render);$("filterName").addEventListener("change",()=>{updateFilters();render()});$("filterSize").addEventListener("change",render);$("importModal").addEventListener("click",event=>{if(event.target===$("importModal"))closeModal()});
+$("rows").addEventListener("click",event=>{const button=event.target.closest("[data-order-key]");if(button)toggleOrdered(button.dataset.orderKey)});
+$("doImport").onclick=async()=>{const file=$("excelFile").files[0];if(!file){$("importStatus").textContent="请先选择 Excel 文件";return}try{$("importStatus").textContent="正在读取工作簿…";const workbook=XLSX.read(await file.arrayBuffer(),{type:"array"});const parsed=parseWorkbook(workbook);const byKey=new Map(imported.map(row=>[productKey(row),row]));for(const row of parsed){const key=productKey(row),old=byKey.get(key)||{...row,sales_quantity:0,system_stock:0};if(row.sales_quantity!==null)old.sales_quantity=row.sales_quantity;if(row.system_stock!==null)old.system_stock=row.system_stock;byKey.set(key,old)}imported=[...byKey.values()];localStorage.setItem(STORE_KEY+"_time",new Date().toISOString());saveImported();render();$("importStatus").textContent=`导入完成：本次读取 ${parsed.length} 种商品，当前共 ${imported.length} 种。`;$("excelFile").value=""}catch(error){console.error(error);$("importStatus").textContent="导入失败："+error.message}};
+$("doImport").onclick=async()=>{const file=$("excelFile").files[0];if(!file){$("importStatus").textContent="请先选择 Excel 文件";return}try{$("importStatus").textContent="正在读取工作簿…";const workbook=XLSX.read(await file.arrayBuffer(),{type:"array"});const parsed=parseWorkbook(workbook);const byKey=new Map(imported.map(row=>[productKey(row),row]));for(const row of parsed){const key=productKey(row),old=byKey.get(key)||{...row,sales_quantity:0,system_stock:0};if(row.sales_quantity!==null)old.sales_quantity=row.sales_quantity;if(row.system_stock!==null)old.system_stock=row.system_stock;byKey.set(key,old)}imported=[...byKey.values()];localStorage.setItem(STORE_KEY+"_time",new Date().toISOString());saveImported();render();const skipped=parsed.skippedCount?`，另跳过 ${parsed.skippedCount} 行无规格或型号的非门类项目`:"";$("importStatus").textContent=`导入完成：本次读取 ${parsed.length} 种商品${skipped}，当前共 ${imported.length} 种。`;$("excelFile").value=""}catch(error){console.error(error);$("importStatus").textContent="导入失败："+error.message}};
+$("doImport").onclick=async()=>{const file=$("excelFile").files[0];if(!file){$("importStatus").textContent="请先选择 Excel 文件";return}try{$("importStatus").textContent="正在读取三个月销售数据…";const workbook=XLSX.read(await file.arrayBuffer(),{type:"array"});const parsed=parseWorkbook(workbook);mergeSalesImport(parsed);localStorage.setItem(STORE_KEY+"_time",new Date().toISOString());saveImported();render();const skipped=parsed.skippedCount?`，跳过 ${parsed.skippedCount} 行缺少规格或型号的项目`:"";$("importStatus").textContent=`导入完成：已更新 ${parsed.length} 种商品的三个月平均销量${skipped}。原库存数量保持不变。`;$ ("excelFile").value=""}catch(error){console.error(error);$("importStatus").textContent="导入失败："+error.message}};
+async function applySession(session){const next=!!session;if(next===authorized)return;authorized=next;$("authGate").classList.toggle("hidden",next);$("appShell").classList.toggle("hidden",!next);if(next){imported=readSaved();updateImportInfo();updateFilters();render();await loadPending();watchPending()}else{stopWatchingPending();$("authPassword").value=""}}
+$("loginForm").addEventListener("submit",async event=>{event.preventDefault();const email=$("authEmail").value.trim(),password=$("authPassword").value;const button=$("loginButton");button.disabled=true;$("authStatus").textContent="正在验证…";const {data,error}=await sb.auth.signInWithPassword({email,password});button.disabled=false;if(error){$("authStatus").textContent="验证失败：邮箱或密码不正确，或账号尚未启用。";return}$("authStatus").textContent="";await applySession(data.session)});
+$("logoutButton").onclick=async()=>{const {error}=await sb.auth.signOut();if(error){alert("退出失败："+error.message);return}await applySession(null)};
+sb.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT")void applySession(null)});
+</script>
+</body>
+</html>
