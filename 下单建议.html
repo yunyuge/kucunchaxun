@@ -126,8 +126,8 @@ if(!row.product_name||!row.size||!row.direction){skippedRows++;continue}
 productRows++;const excelRow=index+1;
 let sales=null,sales_months=null;
 if(columns.sales_months?.length>=3){sales_months=columns.sales_months.slice(0,3).map(column=>{const cell=cells[column.index];return cell===null||cell===undefined||String(cell).trim()===""?0:number(cell,`${column.month}月销售数量`,excelRow)});sales=sales_months.reduce((sum,value)=>sum+value,0)/3}
-else if(columns.sales>=0){const total=number(get("sales"),"三个月销售总量",excelRow);sales=total===null?null:total/3}
-const stock=columns.stock>=0?number(get("stock"),"库存数量",excelRow,true):null;
+else if(columns.sales>=0){const total=number(get("sales"),"三个月销售总量",excelRow);sales=(total??0)/3}
+const stock=columns.stock>=0?(number(get("stock"),"库存数量",excelRow,true)??0):null;
 if(sales===null&&stock===null)continue;
 const key=productMatchKey(row.product_name,row.size,row.direction),old=merged.get(key)||{...row,sales_quantity:null,system_stock:null};
 if(sales!==null){old.sales_quantity=(old.sales_quantity||0)+sales;if(sales_months){if(old.sales_months)old.sales_months=old.sales_months.map((value,index)=>value+sales_months[index]);else old.sales_months=sales_months}}if(stock!==null)old.system_stock=(old.system_stock||0)+stock;merged.set(key,old)
