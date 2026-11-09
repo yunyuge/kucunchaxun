@@ -27,7 +27,7 @@ h1{margin:0;font-size:21px}header p{margin:5px 0 0;color:#bdc9dc;font-size:12px}
 <body>
 <section id="authGate" class="auth-wrap"><div class="auth-card"><h1>登录后查看下单建议</h1><p>请输入已配置的 Supabase 管理员邮箱和密码。</p><form id="loginForm"><label for="authEmail">邮箱</label><input id="authEmail" type="email" autocomplete="username" required><label for="authPassword">密码</label><input id="authPassword" type="password" autocomplete="current-password" required><button id="loginButton" class="btn primary" type="submit">登录验证</button></form><div id="authStatus" class="auth-status" role="status"></div><a href="index.html" style="color:#2563eb;font-size:13px">返回首页</a></div></section>
 <div id="appShell" class="hidden">
-<header><div><h1>销售与库存下单建议</h1><p>销售需求 −（库存 + 龙卷风仓库未入库）= 建议补货数量</p></div><div style="display:flex;align-items:center;gap:16px"><button class="btn" id="logoutButton">退出登录</button><a href="index.html">返回首页</a></div></header>
+<header><div><h1>销售与库存下单建议</h1><p>销售需求 −（库存 + 龙卷风仓库未入库）= 建议补货数量</p></div><div style="display:flex;align-items:center;gap:10px"><a class="btn soft" href="每日利润.html">每日利润</a><button class="btn" id="logoutButton">退出登录</button><a href="index.html">返回首页</a></div></header>
 <main>
 <div id="loadNotice" class="notice">正在读取龙卷风仓库未入库明细…</div>
 <section class="summary">
